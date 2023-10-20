@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scan Product</title>
+    <link rel="stylesheet" href="/vuejs/style.css">
+</head>
+
+<body>
+
+<?php
+// Your database connection code here
+
+// SQL query to fetch product IDs from the database
+$query = "SELECT product_toko_id.id_product AS id_product
+          FROM product_toko_id 
+          INNER JOIN toko_id ON product_toko_id.id_product = toko_id.id_product";
+$result = mysqli_query($conn, $query);
+
+$productData = array();
+while ($row = mysqli_fetch_assoc($result)) {
+    $productData[] = array(
+        'id_product' => $row['id_product']
+    );
+}
+
+// Convert the PHP array to a JavaScript-friendly format
+"const productData = " . json_encode($productData) . ";";
+?>
+
+    <!-- Vue Js App Code -->
+    <div id="app">
+        <div class="header" style="margin-bottom: 20px;">{{ header }}</div>
+        <div class="section" style="width: 500px; margin: auto;">
+            <scanner v-bind:qrbox="350" v-bind:fps="10" style="width: 500px;">
+            </scanner>
+        </div>
+        <div class="footer" style="margin-bottom: 20px;">Result: {{ result }}</div>
+
+        <!-- Display product links -->
+        <div v-for="(data, index) in productData" :key="index">
+            <a :href="`?url=edit&idt=${data.id_product}&idp=${data.id_product}`">
+                <span class="text-xs font-weight-bold text-wrap">{{ data.nama }}</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        Vue.component('scanner', {
+            props: {
+                qrbox: Number,
+                fps: Number,
+            },
+            template: `<div id="qr-code-full-region"></div>`,
+            mounted: function() {
+                var $this = this;
+                var config = {
+                    fps: this.fps ? this.fps : 10
+                };
+                if (this.qrbox) {
+                    config['qrbox'] = this.qrbox;
+                }
+
+                function onScanSuccess(decodedText, decodedResult) {
+                    $this.$root.$emit('decodedCode', decodedText, decodedResult);
+                }
+
+                var html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-code-full-region", config);
+                html5QrcodeScanner.render(onScanSuccess);
+            }
+        });
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                header: 'Scan Product',
+                result: '',
+                productData: productData // Use the retrieved product data
+            },
+            created: function() {
+                this.$root.$on('decodedCode', this.handleDecodedCode);
+            },
+            methods: {
+                handleDecodedCode: function(decodedText) {
+                    this.result = decodedText;
+
+                    // Replace with your actual product IDs
+                    const productIds = this.productData.map(product => product.id_product);
+
+                    const index = productIds.indexOf(decodedText);
+                    if (index !== -1) {
+                        const targetUrl = `?url=edit&idt=${this.productData[index].id_product}&idp=${decodedText}`;
+                        window.location.href = targetUrl;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
