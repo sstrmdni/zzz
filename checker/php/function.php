@@ -3,7 +3,6 @@
 $conn = mysqli_connect("localhost", "root", "", "mirorim_toko");
 
 // check ds
-
 if (isset($_POST['cekds'])) {
     $idds = $_POST['idds'];
     $qty = $_POST['qty'];
@@ -62,54 +61,27 @@ if (isset($_POST['cekds'])) {
 }
 
 // check checeker <3
-if (isset($_POST['nayeon'])) {
+if (isset($_POST['cekchecker'])) {
     $idshop = $_POST['idshop'];
     $qty = $_POST['qty'];
     $note = $_POST['note'];
+    $inv = $_POST['invoice'];
     $jum = count($idshop);
 }
-//gambar
-$allowed_extension = array('png', 'jpg', 'jpeg', 'svg', 'webp');
-
-$namaimage = $_FILES['file']['name']; //ambil gambar
-
-if (!empty($namaimage)) {
-    $dot = explode('.', $namaimage);
-    $ekstensi = strtolower(end($dot)); //ambil ekstensi
-    $ukuran = $_FILES['file']['size']; //ambil size
-    $file_tmp = $_FILES['file']['tmp_name']; //lokasi
-
-    //nama acak
-    $image = md5(uniqid($namaimage, true) . time()) . '.' . $ekstensi; //compile
-
-    // Proses upload
-    if (in_array($ekstensi, $allowed_extension) && $ukuran < 5000000) {
-        move_uploaded_file($file_tmp, '../checkingg/' . $image);
-    } else {
-        echo "File upload error for image";
-    }
-} else {
-    $image = '';
-}
-
 if (empty($note)) {
 } else {
-    $gambar = mysqli_query($conn, "UPDATE checking_id SET image = '$image', note = '$note' WHERE id_shop = '$idshop'");
+    $masuknote = mysqli_query($conn, "UPDATE checking_id SET note = '$note' WHERE invoice = '$inv'");
 }
-
 for ($i = 0; $i < $jum; $i++) {
     $count = (int)$qty[$i];
     if ($count !== 0) {
-        // Update quantity di tabel checking_id
         $insert = mysqli_query($conn, "UPDATE checking_id SET quantity = '$qty[$i]' WHERE id_shop = '$idshop[$i]'");
         if ($insert) {
-            // Mengecek quantity
             $select = mysqli_query($conn, "SELECT c.quantity as qty1, s.jumlah as qty2
-            FROM checking_id c
-            JOIN shop_id s ON c.id_shop = s.id_shop
-            WHERE c.id_shop = '$idshop[$i]'
-            ORDER BY c.id_checking DESC 
-            LIMIT 1");
+                    FROM checking_id c
+                    JOIN shop_id s ON c.id_shop = s.id_shop
+                    WHERE c.id_shop = '$idshop[$i]'
+");
             $data = mysqli_fetch_array($select);
             $qty1 = $data['qty1'];
             $qty2 = $data['qty2'];
